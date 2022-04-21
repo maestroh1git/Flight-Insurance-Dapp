@@ -38,6 +38,7 @@ module.exports = {
   ],
   resolve: {
     extensions: [".js"],
+    //https://stackoverflow.com/questions/64557638/how-to-polyfill-node-core-modules-in-webpack-5
     fallback: {
       "url": false,
       "os": false,
@@ -55,6 +56,7 @@ module.exports = {
     } 
   },
   devServer: {
+    //https://stackoverflow.com/questions/67926476/webpack-dev-server-config-contentbase-not-working-in-latest-version
     static: path.join(__dirname, "dapp"),
     port: 8001,
     //stats: "minimal"

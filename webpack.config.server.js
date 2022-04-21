@@ -22,6 +22,7 @@ module.exports = {
     },
     plugins: [
         new StartServerPlugin('server.js'),
+        //https://github.com/nestjs/nest/issues/5068
         //new webpack.NamedModulesPlugin(),
         new webpack.HotModuleReplacementPlugin(),
         new webpack.NoEmitOnErrorsPlugin(),
