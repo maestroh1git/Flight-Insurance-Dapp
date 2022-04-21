@@ -1,7 +1,5 @@
 # FlightSurety
 
-FlightSurety is a sample application project for Udacity's Blockchain course.
-
 ## Install
 
 This repository contains Smart Contract code in Solidity (using Truffle), tests (also using Truffle), dApp scaffolding (using HTML, CSS and JS) and server app scaffolding.
@@ -14,9 +12,11 @@ To install, download or clone the repo, then:
 ## Develop Client
 
 To run truffle tests:
-
+`ganache-cli --accounts=100`
 `truffle test ./test/flightSurety.js`
 `truffle test ./test/oracles.js`
+
+
 
 To use the dapp:
 
@@ -25,7 +25,7 @@ To use the dapp:
 
 To view dapp:
 
-`http://localhost:8000`
+`http://localhost:8001`
 
 ## Develop Server
 
