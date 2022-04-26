@@ -1,5 +1,6 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const webpack = require('webpack')
 
 module.exports = {
   entry: ['babel-polyfill', path.join(__dirname, "src/dapp")],
@@ -8,8 +9,7 @@ module.exports = {
     filename: "bundle.js"
   },
   module: {
-    rules: [
-    {
+    rules: [{
         test: /\.(js|jsx)$/,
         use: "babel-loader",
         exclude: /node_modules/
@@ -32,33 +32,40 @@ module.exports = {
     ]
   },
   plugins: [
-    new HtmlWebpackPlugin({ 
+    new HtmlWebpackPlugin({
       template: path.join(__dirname, "src/dapp/index.html")
-    })
+    }),
+    new HtmlWebpackPlugin({ // Also generate a test.html
+      filename: 'airlines.html',
+      template: 'src/dapp/airlines.html'
+    }),
+    new HtmlWebpackPlugin({ // Also generate a test.html
+      filename: 'passengers.html',
+      template: 'src/dapp/passengers.html'
+    }),
+    new webpack.ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'],
+    }),
+    new webpack.ProvidePlugin({
+      process: 'process/browser',
+    }),
+
   ],
   resolve: {
     extensions: [".js"],
-    //https://stackoverflow.com/questions/64557638/how-to-polyfill-node-core-modules-in-webpack-5
     fallback: {
-      "url": false,
-      "os": false,
-      "fs": false,
-      "tls": false,
-      "net": false,
-      "path": false,
-      "zlib": false,
-      "http": false,
-      "https": false,
-      "stream": false,
-      "crypto": false,
-      "assert": false,
-      "crypto-browserify": require.resolve('crypto-browserify'), //if you want to use this module also don't forget npm i crypto-browserify 
-    } 
+      "url": require.resolve("url/"),
+      "os": require.resolve("os-browserify/browser"),
+      "https": require.resolve("https-browserify"),
+      "http": require.resolve("stream-http"),
+      "assert": require.resolve("assert/"),
+      "crypto": require.resolve("crypto-browserify"),
+      "stream": require.resolve("stream-browserify"),
+      "buffer": require.resolve("buffer")
+    }
   },
   devServer: {
-    //https://stackoverflow.com/questions/67926476/webpack-dev-server-config-contentbase-not-working-in-latest-version
     static: path.join(__dirname, "dapp"),
-    port: 8001,
-    //stats: "minimal"
+    port: 8000,
   }
 };
