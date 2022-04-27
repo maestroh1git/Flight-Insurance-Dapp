@@ -1,111 +1,155 @@
-var FlightSuretyApp = require('../../build/contracts/FlightSuretyApp.json');
-var Config = require('./config.json');
-var Web3 = require('web3');
-const express = require('express');
 
 
-const {
-    web
-} = require('webpack');
+import http from 'http'
+import app from './server'
 
-let provider;
-let web3;
-let accounts;
-let flightSuretyApp;
+const server = http.createServer(app)
+let currentApp = app
+server.listen(3000)
 
-async function initWeb3() {
-    let config = Config['localhost'];
-    let uri = config.url.replace('http', 'ws');
-    provider = new Web3.providers.WebsocketProvider(uri, {
-
-    });
-    // provider = new Web3.providers.HttpProvider(config.url);
-    web3 = new Web3(provider);
-    accounts = await web3.eth.getAccounts();
-    flightSuretyApp = new web3.eth.Contract(FlightSuretyApp.abi, config.appAddress);
+if (module.hot) {
+ module.hot.accept('./server', () => {
+  server.removeListener('request', currentApp)
+  server.on('request', app)
+  currentApp = app
+ })
 }
 
-const oracles = [];
 
-async function submitOracleResponse(data, account) {
-    const {
-        oracleIndex,
-        airline,
-        flight,
-        timestamp
-    } = data;
 
-    console.log(oracleIndex, airline, flight, timestamp);
 
-    const statusAvailable = [0, 10, 20, 30, 40, 50];
-    let statusCode = Math.floor(Math.random() * statusAvailable.length);
 
-    try {
-        await flightSuretyApp.methods.submitOracleResponse(
-            oracleIndex,
-            airline,
-            flight,
-            timestamp,
-            statusCode
-        ).send({
-            from: account
-        });
-    } catch (e) {
-        console.log(e.reason);
-    }
-}
 
-async function listenRequests() {
-    try{
-    flightSuretyApp.events.OracleRequest({}, function (error, event) {
-        if (error) console.log(error)
-        if (event) {
-            await (new Promise(resolve => setTimeout(resolve, 1000)));
-            for (let i = 0; i < oracles.length; i++) {
-                submitOracleResponse(event.returnValues, oracles[i]);
-            }
-        }
-    })}catch(err){
-        //console.log(err);
-    };
 
-}
+// var FlightSuretyApp = require('../../build/contracts/FlightSuretyApp.json');
+// var Config = require('./config.json');
+// var Web3 = require('web3');
+// const express = require('express');
 
-async function registerOracles() {
-    let fee = await flightSuretyApp.methods.REGISTRATION_FEE().call();
-    console.log('Oracle registration Fee:', fee);
-    for (let i = 0; i < accounts.length; i++) {
-        if (oracles.length == 20) break;
-        try {
-            await flightSuretyApp.methods.registerOracle().send({
-                from: accounts[i],
-                value: fee,
-                gas: 3000000
-            });
-            oracles.push(accounts[i]);
-            console.log(`Oracle ${i} registered.`);
-        } catch (e) {
-            // console.log(e);
-        }
-    }
 
-    console.log(`Registered Oracles: ${oracles.length}`);
-}
+// const {
+//     web
+// } = require('webpack');
 
-async function init() {
-    try {
-        await initWeb3();
-        await registerOracles();
-        listenRequests();
-    } catch (e) {
-        console.log(e);
-        provider.disconnect();
-    }
-}
+// let provider;
+// let web3;
+// let accounts;
+// let flightSuretyApp;
 
-init();
+// async function initWeb3() {
+//     let config = Config['localhost'];
+//     let uri = config.url.replace('http', 'ws');
+//     provider = new Web3.providers.WebsocketProvider(uri, {
 
-const app = express();
-app.get('/', (req, res) => {});
+//     });
+//     // provider = new Web3.providers.HttpProvider(config.url);
+//     web3 = new Web3(provider);
+//     accounts = await web3.eth.getAccounts();
+//     flightSuretyApp = new web3.eth.Contract(FlightSuretyApp.abi, config.appAddress);
+// }
 
-app.listen(3000, () => {});
+// const oracles = [];
+
+// async function submitOracleResponse(data, account) {
+//     const {
+//         oracleIndex,
+//         airline,
+//         flight,
+//         timestamp
+//     } = data;
+
+//     console.log(oracleIndex, airline, flight, timestamp);
+
+//     const statusAvailable = [0, 10, 20, 30, 40, 50];
+//     let statusCode = Math.floor(Math.random() * statusAvailable.length);
+
+//     try {
+//         await flightSuretyApp.methods.submitOracleResponse(
+//             oracleIndex,
+//             airline,
+//             flight,
+//             timestamp,
+//             statusCode
+//         ).send({
+//             from: account
+//         });
+//     } catch (e) {
+//         console.log(e.reason);
+//     }
+// }
+
+// async function listenRequests() {
+//     try{
+//     flightSuretyApp.events.allEvents({},  async function (error, event) {
+//         if (error) console.log(error)
+//         if (event) { 
+//             try{
+//             await (new Promise(resolve => setTimeout(resolve, 1000)));}
+//             catch(e){
+//                 //console.log(e)
+//             }
+//             for (let i = 0; i < oracles.length; i++) {
+//                 submitOracleResponse(event.returnValues, oracles[i]);
+//             }
+//         }
+//     })}catch(err){
+//         //console.log(err);
+//     };
+
+// }
+
+// async function registerOracles() {
+//     let fee = await flightSuretyApp.methods.REGISTRATION_FEE().call();
+//     console.log('Oracle registration Fee:', fee);
+//     for (let i = 0; i < accounts.length; i++) {
+//         if (oracles.length == 20) break;
+//         try {
+//             await flightSuretyApp.methods.registerOracle().send({
+//                 from: accounts[i],
+//                 value: fee,
+//                 gas: 3000000
+//             });
+//             oracles.push(accounts[i]);
+//             console.log(`Oracle ${i} registered.`);
+//         } catch (e) {
+//             // console.log(e);
+//         }
+//     }
+
+//     console.log(`Registered Oracles: ${oracles.length}`);
+// }
+
+// async function init() {
+//     try {
+//         await initWeb3();
+//         await registerOracles();
+//          listenRequests();
+//     } catch (e) {
+//         console.log(e);
+//         provider.disconnect();
+//     }
+// }
+
+// init();
+
+// const app = express();
+// app.get('/', (req, res) => {});
+
+// app.listen(3000, () => {});
+
+
+// import http from 'http'
+// import app from './server'
+
+// const server = http.createServer(app)
+// let currentApp = app
+// server.listen(3000)
+
+// if (module.hot) {
+//  module.hot.accept('./server', () => {
+//   server.removeListener('request', currentApp)
+//   server.on('request', app)
+//   currentApp = app
+//  })
+// }
+
