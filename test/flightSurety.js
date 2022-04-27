@@ -222,13 +222,12 @@ contract('Flight Surety Tests', async (accounts) => {
     let fee = await config.flightSuretyApp.REGISTRATION_FEE.call();
 
     // ACT
-    for(let a=1; a < (TEST_ORACLES_COUNT+70); a++) {      
+    for(let a=1; a < (TEST_ORACLES_COUNT+20); a++) {      
       await config.flightSuretyApp.registerOracle({ from: accounts[a], value: fee});
       let result = await config.flightSuretyApp.getMyIndexes.call({ from: accounts[a]});
       assert.equal(result.length, 3, 'Oracle should be registered with three indexes');
     }
   });
-//modified to submitOracle response and check if insuree is credited as a result of flight delay!-- doesnt work
 
   it("Server will loop through all registered oracles, identify those oracles for which the OracleRequest event applies, and respond by calling into FlightSuretyApp contract with random status code", async () => {
     // ARRANGE
@@ -240,7 +239,7 @@ contract('Flight Surety Tests', async (accounts) => {
     await config.flightSuretyApp.fetchFlightStatus(config.firstAirline, flight, timestamp);
 
 
-    for(let a=1; a < (TEST_ORACLES_COUNT+70); a++) {
+    for(let a=1; a < (TEST_ORACLES_COUNT+20); a++) {
       let oracleIndexes = await config.flightSuretyApp.getMyIndexes({from: accounts[a]});
       for(let idx=0;idx<3;idx++) {
         try {
@@ -290,4 +289,4 @@ contract('Flight Surety Tests', async (accounts) => {
     assert.equal(Number(passengerOriginalBalance) + Number(creditToPay) - (gasPrice * gasUsed), Number(passengerFinalBalance), "Passengers balance should have increased the amount it had credited");
   });
 
-});
+ });

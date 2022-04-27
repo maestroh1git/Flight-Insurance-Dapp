@@ -1,6 +1,6 @@
-pragma solidity >=0.4.25;
+pragma solidity >=0.8.0;
 
-import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "../node_modules/openzeppelin-solidity/contracts/utils/math/SafeMath.sol";
 
 contract FlightSuretyData {
     using SafeMath for uint256;
@@ -54,14 +54,14 @@ contract FlightSuretyData {
     constructor
                                 (
                                 )
-                                public
+                                
     {
         contractOwner = msg.sender;
         airlinesCount = 0;
         authorizedContracts[msg.sender] = 1;
         //passengerAddresses = new address[](0);
         passengerID = passengerID.add(1);
-        passengerAddresses[passengerID] = 0x00;
+        passengerAddresses[passengerID] = address(0);
 
         // 	First airline is registered when contract is deployed.
         airlines[msg.sender] = Airline({
@@ -132,7 +132,7 @@ contract FlightSuretyData {
                             (
                                 address contractAddress
                             )
-                            external
+                            public
                             requireContractOwner
     {
         authorizedContracts[contractAddress] = 1;
@@ -207,7 +207,7 @@ contract FlightSuretyData {
                             (
                                 address airlineAddress,
                                 address registrar,
-                                string name
+                                string calldata name
                             )
                             external
                             requireIsOperational
@@ -270,9 +270,9 @@ contract FlightSuretyData {
     */
     function buy
                             (
-                                string flightCode
+                                string calldata flightCode
                             )
-                            external
+                            public
                             payable
                             requireIsOperational
                             returns (uint256, address, uint256)
@@ -286,16 +286,19 @@ contract FlightSuretyData {
             passengerAddresses[passengerID] = msg.sender;
         }
         if (passengers[msg.sender].passengerWallet != msg.sender) {
-            passengers[msg.sender] = Passenger({
-                                                passengerWallet: msg.sender,
-                                                credit: 0
-                                        });
+            // passengers[msg.sender] = Passenger({
+            //                                     passengerWallet: msg.sender,
+            //                                     credit: 0
+            //                             });
+            Passenger storage newPassenger = passengers[msg.sender];
+            newPassenger.passengerWallet = msg.sender;
+            newPassenger.credit = 0;
             passengers[msg.sender].boughtFlight[flightCode] = msg.value;
         } else {
             passengers[msg.sender].boughtFlight[flightCode] = msg.value;
         }
         if (msg.value > INSURANCE_PRICE_LIMIT) {
-            msg.sender.transfer(msg.value.sub(INSURANCE_PRICE_LIMIT));
+            payable(msg.sender).transfer(msg.value.sub(INSURANCE_PRICE_LIMIT));
         }
     }
 
@@ -324,7 +327,7 @@ contract FlightSuretyData {
     */
     function creditInsurees
                                 (
-                                    string flightCode
+                                    string calldata flightCode
                                 )
                                 external
                                 requireIsOperational
@@ -361,7 +364,7 @@ contract FlightSuretyData {
         uint256 credit = passengers[insuredPassenger].credit;
         require(address(this).balance > credit, "The contract does not have enough funds to pay the credit");
         passengers[insuredPassenger].credit = 0;
-        insuredPassenger.transfer(credit);
+        payable(insuredPassenger).transfer(credit);
         uint256 finalCredit = passengers[insuredPassenger].credit;
         return (initialBalance, credit, address(this).balance, finalCredit, insuredPassenger, address(this));
     }
@@ -414,7 +417,7 @@ contract FlightSuretyData {
     * @dev Fallback function for funding smart contract.
     *
     */
-    function()
+    receive()
                             external
                             payable
     {

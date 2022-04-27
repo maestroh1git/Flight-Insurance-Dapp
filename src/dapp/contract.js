@@ -110,10 +110,10 @@ export default class Contract {
             payload.sender = accts[0];
         });
         self.flightSuretyApp.methods
-            .registerAirline(payload.airlineAddress, payload.name)
+            .registerAirline(payload.airlineAddress, payload.sender, payload.name)
             .send({ from: payload.sender,
                 gas: 5000000,
-                gasPrice: 20000000
+                gasPrice: 200000000
             }, (error, result) => {
                 if (error) {
                     console.log(error);
@@ -195,7 +195,7 @@ export default class Contract {
             .buy(flight)
             .send({ from: payload.passenger, value: priceInWei,
                 gas: 500000,
-                gasPrice: 1
+                gasPrice: 1000000000
             }, (error, result) => {
                 callback(error, payload);
             });

@@ -1,6 +1,6 @@
 var HDWalletProvider = require("@truffle/hdwallet-provider");
 //replace the mnemonic everytime you restart ganache!
-var mnemonic = "perfect loop frost hurt science fabric enjoy possible attitude rate pretty admit";
+var mnemonic = "aerobic awesome tail avocado slim cluster broom garage utility day among tenant";
 
 module.exports = {
   networks: {
@@ -14,7 +14,7 @@ module.exports = {
   },
   compilers: {
     solc: {
-      version: "^0.4.24"
+      version: "^0.8.0"
     }
   }
 };
