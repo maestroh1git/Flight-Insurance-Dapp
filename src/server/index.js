@@ -56,6 +56,7 @@ async function submitOracleResponse(data, account) {
 }
 
 async function listenRequests() {
+    try{
     flightSuretyApp.events.OracleRequest({}, function (error, event) {
         if (error) console.log(error)
         if (event) {
@@ -64,7 +65,9 @@ async function listenRequests() {
                 submitOracleResponse(event.returnValues, oracles[i]);
             }
         }
-    });
+    })}catch(err){
+        //console.log(err);
+    };
 
 }
 
