@@ -1,31 +1,263 @@
-
 import FlightSuretyApp from '../../build/contracts/FlightSuretyApp.json';
 import Config from './config.json';
-import Web3 from 'web3';
 import express from 'express';
+import Web3 from 'web3';
+import BigNumber from 'bignumber.js';
 
+const config = Config['localhost'];
+const web3 = new Web3(new Web3.providers.WebsocketProvider(config.url.replace('http', 'ws')));
 
-let config = Config['localhost'];
-let web3 = new Web3(new Web3.providers.WebsocketProvider(config.url.replace('http', 'ws')));
-web3.eth.defaultAccount = web3.eth.accounts[0];
-let flightSuretyApp = new web3.eth.Contract(FlightSuretyApp.abi, config.appAddress);
+init();
 
+const flightSuretyApp = new web3.eth.Contract(FlightSuretyApp.abi, config.appAddress);
+const oracles = [];
 
-flightSuretyApp.events.OracleRequest({
-    fromBlock: 0
-  }, function (error, event) {
-    if (error) console.log(error)
-    console.log(event)
-});
+async function init() {
+    const accounts = await web3.eth.getAccounts();
+
+    const NUMBER_OF_ORACLES = 40;
+    registerOracles(accounts.slice(1, NUMBER_OF_ORACLES + 1));
+
+    flightSuretyApp.events.OracleRequest({fromBlock: 0}, (error, event) => {
+        if (error) return console.log(error);
+        if (!event.returnValues) return console.error("No returnValues");
+
+        FlightStatusResponse(
+            event.returnValues.index,
+            event.returnValues.airline,
+            event.returnValues.flight,
+            event.returnValues.timestamp
+        )
+    });
+
+}
+
+async function registerOracles(oracleAccounts) {
+
+    const fee = await flightSuretyApp.methods.REGISTRATION_FEE().call();
+    const STATUS_CODES = [0, 10, 20, 30, 40, 50];
+
+    for (let i = 0; i < oracleAccounts.length; i++) {
+
+        const address = oracleAccounts[i];
+        const statusCode = STATUS_CODES[Math.floor(Math.random() * STATUS_CODES.length)];
+
+        await flightSuretyApp.methods.registerOracle().send({
+            from: address,
+            value: fee,
+            gas: 3000000
+        });
+
+        const indexes = await flightSuretyApp.methods
+            .getMyIndexes()
+            .call({ from: address });
+
+        oracles.push({ address, indexes, statusCode });
+    }
+
+    console.log(`${oracles.length} Oracles Registered`);
+}
+
+async function FlightStatusResponse(index, airline, flight, timestamp) {
+
+    if (oracles.length === 0) return;
+
+    console.log("New Oracle request ************************")
+    console.log(index, airline, flight, timestamp);
+
+    const activeOracles = [];
+
+    oracles.forEach((oracle) => {
+        if ( BigNumber(oracle.indexes[0]).isEqualTo(index) ) activeOracles.push( oracle );
+        if ( BigNumber(oracle.indexes[1]).isEqualTo(index) ) activeOracles.push( oracle );
+        if ( BigNumber(oracle.indexes[2]).isEqualTo(index) ) activeOracles.push( oracle );
+    });
+
+    console.log(`${activeOracles.length} Matching active Oracles will respond`);
+
+    activeOracles.forEach( (oracle) => {
+        flightSuretyApp.methods
+            .submitOracleResponse(index, airline, flight, timestamp, oracle.statusCode)
+            .send({ from: oracle.address, gas: 5555555 })
+            .then(() => {
+                console.log("Oracle responded with " + oracle.statusCode);
+            })
+            .catch((err) => console.log("Oracle response rejected"));
+    });
+}
 
 const app = express();
 app.get('/api', (req, res) => {
     res.send({
-      message: 'An API for use with your Dapp!'
+        message: 'An API for use with your Dapp!'
     })
-})
+});
 
 export default app;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// var FlightSuretyApp = require('../../build/contracts/FlightSuretyApp.json');
+// var Config = require('./config.json');
+// var Web3 = require('web3');
+// const express = require('express');
+
+
+// const {
+//     web
+// } = require('webpack');
+
+// let provider;
+// let web3;
+// let accounts;
+// let flightSuretyApp;
+
+// async function initWeb3() {
+//     let config = Config['localhost'];
+//     let uri = config.url.replace('http', 'ws');
+//     provider = new Web3.providers.WebsocketProvider(uri, {
+
+//     });
+//     // provider = new Web3.providers.HttpProvider(config.url);
+//     web3 = new Web3(provider);
+//     accounts = await web3.eth.getAccounts();
+//     flightSuretyApp = new web3.eth.Contract(FlightSuretyApp.abi, config.appAddress);
+// }
+
+// const oracles = [];
+
+// async function submitOracleResponse(data, account) {
+//     const {
+//         oracleIndex,
+//         airline,
+//         flight,
+//         timestamp
+//     } = data;
+
+//     console.log(oracleIndex, airline, flight, timestamp);
+
+//     const statusAvailable = [0, 10, 20, 30, 40, 50];
+//     let statusCode = Math.floor(Math.random() * statusAvailable.length);
+
+//     try {
+//         await flightSuretyApp.methods.submitOracleResponse(
+//             oracleIndex,
+//             airline,
+//             flight,
+//             timestamp,
+//             statusCode
+//         ).send({
+//             from: account
+//         });
+//     } catch (e) {
+//         console.log(e.reason);
+//     }
+// }
+
+// async function listenRequests() {
+//     flightSuretyApp.events.OracleRequest({}, function (error, event) {
+//         if (error) console.log(error)
+//         if (event) {
+//             await (new Promise(resolve => setTimeout(resolve, 1000)));
+//             for (let i = 0; i < oracles.length; i++) {
+//                 submitOracleResponse(event.returnValues, oracles[i]);
+//             }
+//         }
+//     });
+
+// }
+
+// async function registerOracles() {
+//     let fee = await flightSuretyApp.methods.REGISTRATION_FEE().call();
+//     console.log('Oracle registration Fee:', fee);
+//     for (let i = 0; i < accounts.length; i++) {
+//         if (oracles.length == 20) break;
+//         try {
+//             await flightSuretyApp.methods.registerOracle().send({
+//                 from: accounts[i],
+//                 value: fee,
+//                 gas: 3000000
+//             });
+//             oracles.push(accounts[i]);
+//             console.log(`Oracle ${i} registered.`);
+//         } catch (e) {
+//             // console.log(e);
+//         }
+//     }
+
+//     console.log(`Registered Oracles: ${oracles.length}`);
+// }
+
+// async function init() {
+//     try {
+//         await initWeb3();
+//         await registerOracles();
+//         listenRequests();
+//     } catch (e) {
+//         console.log(e);
+//         provider.disconnect();
+//     }
+// }
+
+// init();
+
+// const app = express();
+// app.get('/', (req, res) => {});
+
+// app.listen(3000, () => {});
+
+
+
+
+
+
+
+
+
+
+
+
+// import FlightSuretyApp from '../../build/contracts/FlightSuretyApp.json';
+// import Config from './config.json';
+// import Web3 from 'web3';
+// import express from 'express';
+
+
+// let config = Config['localhost'];
+// let web3 = new Web3(new Web3.providers.WebsocketProvider(config.url.replace('http', 'ws')));
+// web3.eth.defaultAccount = web3.eth.accounts[0];
+// let flightSuretyApp = new web3.eth.Contract(FlightSuretyApp.abi, config.appAddress);
+
+
+// flightSuretyApp.events.OracleRequest({
+//     fromBlock: 0
+//   }, function (error, event) {
+//     if (error) console.log(error)
+//     console.log(event)
+// });
+
+// const app = express();
+// app.get('/api', (req, res) => {
+//     res.send({
+//       message: 'An API for use with your Dapp!'
+//     })
+// })
+
+// export default app;
 
 
 

@@ -1,6 +1,6 @@
 var HDWalletProvider = require("@truffle/hdwallet-provider");
 //replace the mnemonic everytime you restart ganache!
-var mnemonic = "correct kid expose wire maze save type can smart small swift roast";
+var mnemonic = "soldier place blade switch side stand chest powder daughter army vacant result";
 
 module.exports = {
   networks: {
