@@ -20,6 +20,9 @@ module.exports = {
             exclude: /node_modules/
         }]
     },
+    optimization: {
+        moduleIds: "named"
+    },
     plugins: [
         new StartServerPlugin('server.js'),
         //https://github.com/nestjs/nest/issues/5068
@@ -33,7 +36,8 @@ module.exports = {
         }),
     ],
     output: {
-        path: path.join(__dirname, 'prod/server'),
-        filename: 'server.js'
+        path: path.resolve(__dirname, 'prod/server'),
+        filename: 'server.js',
+        publicPath: ''
     }
 }
